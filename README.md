@@ -29,6 +29,16 @@ git clone \[https://github.com/your-username/lyrix-starter.git\](https://github.
 
 ## **🔧 Config**
 
+Connect the starter to your Lyrix web dashboard:
+
+```bash
+LYRIX_WEB_URL=http://localhost:3000
+```
+
+The `/lx-admin` login form sends the Lyrix Project ID and password to the
+starter API, which verifies them against `${LYRIX_WEB_URL}/api/lx-admin/login`
+and creates a local admin session.
+
 Update lyrix.config.ts to sync with your web dashboard:
 
 export const lyrixConfig \= {  

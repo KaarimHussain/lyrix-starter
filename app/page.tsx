@@ -10,16 +10,16 @@ export default function Home() {
             Hello, Lyrix Here
           </h1>
           <div className="flex items-center gap-5 mt-5">
-            <Link href={"https://lyrix-seven.vercel.app/"}>
-              <Button size="lg">
+            <Button asChild size="lg">
+              <Link href="https://lyrix-seven.vercel.app/">
                 Check Out the Website
-              </Button>
-            </Link>
-            <Link href={"https://lyrix-seven.vercel.app/docs"}>
-              <Button variant="secondary" size="lg">
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" size="lg">
+              <Link href="https://lyrix-seven.vercel.app/docs">
                 Read Docs
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </div>
       </div>
