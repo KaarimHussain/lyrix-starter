@@ -1,17 +1,13 @@
 import { NextResponse } from "next/server";
 import {
+  createLxAdminSessionToken,
   LX_ADMIN_SESSION_COOKIE,
   LX_ADMIN_SESSION_MAX_AGE,
 } from "@/lib/lx-admin-session";
-
-const DEFAULT_LYRIX_WEB_URL = "http://localhost:3000";
+import { LYRIX_SERVER_URL } from "@/static/data";
 
 function getLyrixWebUrl() {
-  return (
-    process.env.LYRIX_WEB_URL ||
-    process.env.NEXT_PUBLIC_LYRIX_WEB_URL ||
-    DEFAULT_LYRIX_WEB_URL
-  ).replace(/\/$/, "");
+  return LYRIX_SERVER_URL.replace(/\/$/, "");
 }
 
 export async function POST(request: Request) {
@@ -51,16 +47,36 @@ export async function POST(request: Request) {
       );
     }
 
+    const project =
+      payload.project &&
+        typeof payload.project === "object" &&
+        typeof payload.project.id === "string" &&
+        payload.project.lxProjectId === lxProjectId
+        ? payload.project
+        : null;
+
+    if (!project) {
+      return NextResponse.json(
+        { error: "Lyrix web returned an invalid admin session response." },
+        { status: 502 }
+      );
+    }
+
+    const sessionToken = createLxAdminSessionToken({
+      lxProjectId: project.lxProjectId,
+      projectId: project.id,
+    });
+
     const result = NextResponse.json(
       {
-        project: payload.project,
+        project,
       },
       { status: 200 }
     );
 
     result.cookies.set({
       name: LX_ADMIN_SESSION_COOKIE,
-      value: lxProjectId,
+      value: sessionToken,
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
@@ -71,6 +87,16 @@ export async function POST(request: Request) {
     return result;
   } catch (error) {
     console.error("POST /api/lx-admin/login failed:", error);
+    if (
+      error instanceof Error &&
+      error.message.includes("LX_ADMIN_SESSION_SECRET")
+    ) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
       {
         error:

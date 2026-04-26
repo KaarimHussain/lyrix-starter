@@ -1,0 +1,1 @@
+export const LYRIX_SERVER_URL = "https://lyrix-seven.vercel.app"
