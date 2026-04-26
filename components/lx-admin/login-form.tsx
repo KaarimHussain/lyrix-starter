@@ -2,8 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import LyrixInput from "@/components/LyrixInput";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 export function LxAdminLoginForm() {
   const router = useRouter();
@@ -48,36 +48,29 @@ export function LxAdminLoginForm() {
   }
 
   return (
-    <form className="grid gap-4" onSubmit={handleSubmit}>
-      <div className="grid gap-2">
-        <label className="text-sm font-medium" htmlFor="project-id">
-          Lyrix Project ID
-        </label>
-        <Input
-          autoComplete="username"
-          id="project-id"
-          name="projectId"
-          placeholder="lx-prj-xxxxxxx"
-          type="text"
-        />
-      </div>
+    <form className="grid gap-5" onSubmit={handleSubmit}>
+      <LyrixInput
+        autoComplete="username"
+        id="project-id"
+        inputSize="lg"
+        label="Lyrix Project ID"
+        name="projectId"
+        placeholder="lx-prj-xxxxxxx"
+        type="text"
+      />
 
-      <div className="grid gap-2">
-        <label className="text-sm font-medium" htmlFor="password">
-          Password
-        </label>
-        <Input
-          autoComplete="current-password"
-          id="password"
-          name="password"
-          placeholder="Password"
-          type="password"
-        />
-      </div>
+      <LyrixInput
+        autoComplete="current-password"
+        error={error}
+        id="password"
+        inputSize="lg"
+        label="Admin Password"
+        name="password"
+        placeholder="Enter admin password"
+        variant="password"
+      />
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
-      <Button className="w-full" disabled={isSubmitting} size="lg" type="submit">
+      <Button className="h-12 w-full" disabled={isSubmitting} size="lg" type="submit">
         {isSubmitting ? "Signing in..." : "Sign in"}
       </Button>
     </form>

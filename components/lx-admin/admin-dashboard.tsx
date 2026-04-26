@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Bot,
   Boxes,
   FileText,
   Globe2,
   LayoutTemplate,
+  LogOut,
   MessageSquareText,
   MonitorSmartphone,
   PanelLeft,
@@ -46,7 +48,20 @@ const adminTabs: Array<{
 ];
 
 export function LxAdminDashboard() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<AdminTab>("builder");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+
+    try {
+      await fetch("/api/lx-admin/logout", { method: "POST" });
+    } finally {
+      router.push("/lx-admin/login");
+      router.refresh();
+    }
+  }
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -68,31 +83,45 @@ export function LxAdminDashboard() {
       </header>
 
       <div className="grid min-h-[calc(100vh-3.5rem)] lg:grid-cols-[220px_minmax(0,1fr)]">
-        <aside className="border-b border-border bg-sidebar p-3 lg:border-b-0 lg:border-r">
-          <div className="px-2 py-3">
-            <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
-              Workspace
-            </p>
-            <h1 className="mt-1 text-base font-semibold">Editor Dashboard</h1>
+        <aside className="flex flex-col border-b border-border bg-sidebar p-3 lg:border-b-0 lg:border-r">
+          <div>
+            <div className="px-2 py-3">
+              <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
+                Workspace
+              </p>
+              <h1 className="mt-1 text-base font-semibold">Editor Dashboard</h1>
+            </div>
+
+            <nav className="grid gap-1" aria-label="Lyrix admin sections">
+              {adminTabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-medium transition-colors ${
+                    activeTab === tab.key
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <tab.icon className="size-4 shrink-0" />
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
           </div>
 
-          <nav className="grid gap-1" aria-label="Lyrix admin sections">
-            {adminTabs.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-medium transition-colors ${
-                  activeTab === tab.key
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
-              >
-                <tab.icon className="size-4 shrink-0" />
-                {tab.label}
-              </button>
-            ))}
-          </nav>
+          <div className="mt-4 border-t border-border pt-3 lg:mt-auto">
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="flex h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-60"
+            >
+              <LogOut className="size-4 shrink-0" />
+              {isLoggingOut ? "Signing out..." : "Log out"}
+            </button>
+          </div>
         </aside>
 
         <section className="min-w-0 px-5 py-6 sm:px-7 lg:px-10 lg:py-8">
