@@ -1,28 +1,9 @@
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { LyrixRenderer } from "@/components/lyrix/lyrix-renderer";
+import { LyrixPageService } from "@/lib/lyrix-page-service";
 
-export default function Home() {
-  return (
-    <>
-      <div className="min-h-screen w-full pt-20">
-        <div className="flex flex-col container-layout">
-          <h1 className="text-5xl font-bold">
-            Hello, Lyrix Here
-          </h1>
-          <div className="flex items-center gap-5 mt-5">
-            <Button asChild size="lg">
-              <Link href="https://lyrix-seven.vercel.app/">
-                Check Out the Website
-              </Link>
-            </Button>
-            <Button asChild variant="secondary" size="lg">
-              <Link href="https://lyrix-seven.vercel.app/docs">
-                Read Docs
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
+export default async function Home() {
+  const pageService = new LyrixPageService();
+  const document = await pageService.getPageDocument("/");
+
+  return <LyrixRenderer document={document} />;
 }
