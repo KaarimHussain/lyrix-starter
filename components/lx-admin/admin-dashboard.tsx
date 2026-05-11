@@ -8,25 +8,26 @@ import {
   Boxes,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
   FileText,
-  Globe2,
   LayoutTemplate,
   Loader2,
   LogOut,
   MessageSquareText,
   MonitorSmartphone,
-  PanelLeft,
   Plus,
   Settings,
   Sparkles,
   Trash2,
   X,
   WandSparkles,
+  Book,
+  StickyNote
 } from "lucide-react";
 import LyrixInput from "@/components/LyrixInput";
 import { Button } from "@/components/ui/button";
 
-type AdminTab = "ai" | "builder" | "blocks" | "site";
+type AdminTab = "ai" | "pages" | "blocks" | "site";
 
 type BuilderPage = {
   title: string;
@@ -49,16 +50,12 @@ type ReusableComponent = {
 type ComponentApiItem = ReusableComponent;
 
 function isComponentApiItem(value: unknown): value is ComponentApiItem {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const component = value as Partial<ComponentApiItem>;
-
+  if (!value || typeof value !== "object") return false;
+  const c = value as Partial<ComponentApiItem>;
   return (
-    typeof component.name === "string" &&
-    typeof component.slug === "string" &&
-    typeof component.filePath === "string"
+    typeof c.name === "string" &&
+    typeof c.slug === "string" &&
+    typeof c.filePath === "string"
   );
 }
 
@@ -68,41 +65,40 @@ const adminTabs: Array<{
   description: string;
   icon: React.ElementType;
 }> = [
-  {
-    key: "ai",
-    label: "AI",
-    description: "Generate copy, sections, and quick edits.",
-    icon: Sparkles,
-  },
-  {
-    key: "builder",
-    label: "Builder",
-    description: "Compose pages from Lyrix blocks.",
-    icon: LayoutTemplate,
-  },
-  {
-    key: "blocks",
-    label: "Blocks",
-    description: "Create reusable project components.",
-    icon: Boxes,
-  },
-  {
-    key: "site",
-    label: "Site",
-    description: "Manage project settings and publishing.",
-    icon: Settings,
-  },
-];
+    {
+      key: "ai",
+      label: "AI",
+      description: "Generate copy, sections, and quick edits.",
+      icon: Sparkles,
+    },
+    {
+      key: "pages",
+      label: "Pages",
+      description: "Compose pages from Lyrix blocks.",
+      icon: StickyNote,
+    },
+    {
+      key: "blocks",
+      label: "Blocks",
+      description: "Create reusable project components.",
+      icon: Boxes,
+    },
+    {
+      key: "site",
+      label: "Site",
+      description: "Manage project settings and publishing.",
+      icon: Settings,
+    },
+  ];
 
 export function LxAdminDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<AdminTab>("builder");
+  const [activeTab, setActiveTab] = useState<AdminTab>("pages");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   async function handleLogout() {
     setIsLoggingOut(true);
-
     try {
       await fetch("/api/lx-admin/logout", { method: "POST" });
     } finally {
@@ -113,101 +109,128 @@ export function LxAdminDashboard() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <header className="border-b bg-card">
-        <div className="flex h-14 items-center justify-between gap-4 px-5 lg:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex size-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
-              <PanelLeft className="size-4" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Lyrix Admin</p>
-              <p className="text-xs text-muted-foreground">Starter control room</p>
+      {/* ── Top bar ── */}
+      <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-border/60 bg-card/80 px-4 backdrop-blur-md">
+        <div className="flex items-center select-none">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/Logo.png"
+            alt="Lyrix"
+            className="h-15 w-15 shrink-0 rounded"
+          />
+          <div className="leading-none">
+            <div className="flex gap-3 items-center">
+              <span className="text-3xl font-semibold tracking-tight">Lyrix</span>
+              <div className="h-4 w-px bg-primary" />
+              <span className="ml-1 text-sm text-muted-foreground">Admin</span>
             </div>
           </div>
-          <Button asChild size="sm" variant="outline">
+        </div>
+
+        <div className="ml-auto flex items-center gap-2">
+          <Button asChild size="sm" variant="outline" className="gap-1.5">
+            <Link href="https://lyrix-seven.vercel.app/docs" target="_blank" rel="noopener noreferrer">
+              <Book className="size-3.5" />
+              <span className="hidden text-xs sm:inline">Docs</span>
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline" className="gap-1.5">
             <Link href="/" target="_blank" rel="noopener noreferrer">
-              View site
+              <ExternalLink className="size-3.5" />
+              <span className="hidden text-xs sm:inline">View site</span>
             </Link>
           </Button>
         </div>
       </header>
 
+      {/* ── Body ── */}
       <div
-        className={`grid min-h-[calc(100vh-3.5rem)] ${
-          isSidebarCollapsed
-            ? "lg:grid-cols-[76px_minmax(0,1fr)]"
-            : "lg:grid-cols-[220px_minmax(0,1fr)]"
-        }`}
+        className={`grid min-h-[calc(100vh-3.5rem)] transition-[grid-template-columns] duration-200 ease-in-out ${isSidebarCollapsed
+          ? "lg:grid-cols-[60px_1fr]"
+          : "lg:grid-cols-[228px_1fr]"
+          }`}
       >
-        <aside className="flex flex-col border-b border-border bg-sidebar p-2 transition-[width] lg:border-b-0 lg:border-r">
-          <div>
-            <div
-              className={`flex items-center gap-2 px-2 py-2 ${
-                isSidebarCollapsed ? "justify-center" : "justify-between"
+        {/* ── Sidebar ── */}
+        <aside className="flex flex-col border-b border-border/60 bg-card/40 lg:border-b-0 lg:border-r">
+          {/* Workspace label row */}
+          <div
+            className={`flex h-10 shrink-0 items-center border-b border-border/40 px-3 ${isSidebarCollapsed ? "justify-center" : "justify-between"
               }`}
+          >
+            {!isSidebarCollapsed && (
+              <span className="select-none text-[10px] font-mono uppercase tracking-widest text-muted-foreground/50">
+                Workspace
+              </span>
+            )}
+            <Button
+              aria-label={
+                isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+              }
+              size="icon-xs"
+              type="button"
+              variant="ghost"
+              className="shrink-0 text-muted-foreground/50 hover:text-foreground"
+              onClick={() => setIsSidebarCollapsed((c) => !c)}
             >
-              {!isSidebarCollapsed ? (
-                <div>
-                  <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
-                    Workspace
-                  </p>
-                  <h1 className="mt-1 text-base font-semibold">Editor Dashboard</h1>
-                </div>
-              ) : null}
-              <Button
-                aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                size="icon-xs"
-                type="button"
-                variant="ghost"
-                onClick={() => setIsSidebarCollapsed((current) => !current)}
-              >
-                {isSidebarCollapsed ? (
-                  <ChevronRight className="size-4" />
-                ) : (
-                  <ChevronLeft className="size-4" />
-                )}
-              </Button>
-            </div>
-
-            <nav className="grid gap-1" aria-label="Lyrix admin sections">
-              {adminTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setActiveTab(tab.key)}
-                  title={isSidebarCollapsed ? tab.label : undefined}
-                  className={`flex h-9 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-medium transition-colors ${
-                    activeTab === tab.key
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  } ${isSidebarCollapsed ? "justify-center px-2" : ""}`}
-                >
-                  <tab.icon className="size-4 shrink-0" />
-                  {!isSidebarCollapsed ? tab.label : null}
-                </button>
-              ))}
-            </nav>
+              {isSidebarCollapsed ? (
+                <ChevronRight className="size-3.5" />
+              ) : (
+                <ChevronLeft className="size-3.5" />
+              )}
+            </Button>
           </div>
 
-          <div className="mt-4 border-t border-border pt-3 lg:mt-auto">
+          {/* Nav */}
+          <nav
+            className="flex-1 grid content-start gap-0.5 p-2"
+            aria-label="Lyrix admin sections"
+          >
+            {adminTabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                title={isSidebarCollapsed ? tab.label : undefined}
+                className={`group flex h-9 w-full items-center gap-2.5 rounded-lg text-sm font-medium transition-all duration-100 ${isSidebarCollapsed ? "justify-center px-0" : "px-2.5"
+                  } ${activeTab === tab.key
+                    ? "bg-primary/12 text-primary ring-1 ring-inset ring-primary/20"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                  }`}
+              >
+                <tab.icon
+                  className={`size-4 shrink-0 transition-colors ${activeTab === tab.key
+                    ? "text-primary"
+                    : "text-muted-foreground/60 group-hover:text-foreground"
+                    }`}
+                />
+                {!isSidebarCollapsed && (
+                  <span className="truncate">{tab.label}</span>
+                )}
+              </button>
+            ))}
+          </nav>
+
+          {/* Logout */}
+          <div className="border-t border-border/40 p-2">
             <button
               type="button"
               onClick={handleLogout}
               disabled={isLoggingOut}
               title={isSidebarCollapsed ? "Log out" : undefined}
-              className={`flex h-9 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-60 ${
-                isSidebarCollapsed ? "justify-center px-2" : ""
-              }`}
+              className={`flex h-9 w-full items-center gap-2.5 rounded-lg text-sm font-medium text-muted-foreground/60 transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-50 ${isSidebarCollapsed ? "justify-center px-0" : "px-2.5"
+                }`}
             >
               <LogOut className="size-4 shrink-0" />
-              {!isSidebarCollapsed ? (isLoggingOut ? "Signing out..." : "Log out") : null}
+              {!isSidebarCollapsed &&
+                (isLoggingOut ? "Signing out…" : "Log out")}
             </button>
           </div>
         </aside>
 
-        <section className="min-w-0 px-4 py-4 sm:px-5 lg:px-6 lg:py-5">
+        {/* ── Content ── */}
+        <section className="min-w-0 overflow-auto px-5 py-5 lg:px-7 lg:py-6">
           {activeTab === "ai" ? <AiPanel /> : null}
-          {activeTab === "builder" ? <BuilderPanel /> : null}
+          {activeTab === "pages" ? <BuilderPanel /> : null}
           {activeTab === "blocks" ? <BlocksPanel /> : null}
           {activeTab === "site" ? <SitePanel /> : null}
         </section>
@@ -216,28 +239,30 @@ export function LxAdminDashboard() {
   );
 }
 
+// ── Panels ────────────────────────────────────────────────────────────────────
+
 function AiPanel() {
   return (
-    <div className="grid gap-7">
+    <div className="grid gap-5">
       <PanelHeader
         icon={Bot}
         title="AI"
         description="Draft, rewrite, and structure content before it becomes real page data."
       />
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="rounded-xl border border-border bg-card p-6">
-          <div className="flex items-center gap-2">
-            <MessageSquareText className="size-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold">Prompt Workspace</h2>
+      <div className="grid gap-4 xl:grid-cols-[1fr_288px]">
+        <div className="rounded-xl border border-border/60 bg-card p-5">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <MessageSquareText className="size-3.5" />
+            Prompt Workspace
           </div>
           <textarea
-            className="mt-5 min-h-64 w-full resize-none rounded-lg border border-border bg-background p-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
-            placeholder="Ask Lyrix AI to draft a hero section, rewrite this page, or generate block ideas..."
+            className="mt-4 min-h-52 w-full resize-none rounded-lg border border-border/60 bg-background/60 p-3.5 text-sm outline-none transition-colors placeholder:text-muted-foreground/50 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+            placeholder="Ask Lyrix AI to draft a hero section, rewrite this page, or generate block ideas…"
           />
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button size="sm">
-              <WandSparkles className="size-4" />
+            <Button size="sm" className="gap-1.5">
+              <WandSparkles className="size-3.5" />
               Generate
             </Button>
             <Button size="sm" variant="outline">
@@ -249,15 +274,15 @@ function AiPanel() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold">AI Queue</h2>
-          <div className="mt-4 grid gap-3 text-sm">
+        <div className="rounded-xl border border-border/60 bg-card p-5">
+          <p className="text-xs font-medium text-muted-foreground">AI Queue</p>
+          <div className="mt-3 grid gap-2">
             <AiQueueItem title="Hero copy" status="Ready" />
             <AiQueueItem title="Feature grid ideas" status="Draft" />
             <AiQueueItem title="SEO summary" status="Waiting" />
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
@@ -301,13 +326,13 @@ function BuilderPanel() {
             (page: unknown): page is PageApiItem =>
               Boolean(
                 page &&
-                  typeof page === "object" &&
-                  "name" in page &&
-                  "slug" in page &&
-                  "routePath" in page &&
-                  typeof page.name === "string" &&
-                  typeof page.slug === "string" &&
-                  typeof page.routePath === "string"
+                typeof page === "object" &&
+                "name" in page &&
+                "slug" in page &&
+                "routePath" in page &&
+                typeof (page as PageApiItem).name === "string" &&
+                typeof (page as PageApiItem).slug === "string" &&
+                typeof (page as PageApiItem).routePath === "string"
               )
           )
           .map((page) => ({
@@ -316,16 +341,13 @@ function BuilderPanel() {
             slug: page.slug,
           }));
 
-        if (!isActive) {
-          return;
-        }
+        if (!isActive) return;
 
         setPages(loadedPages);
         setSelectedPath((currentPath) => {
           if (loadedPages.some((page) => page.path === currentPath)) {
             return currentPath;
           }
-
           return loadedPages[0]?.path ?? "/";
         });
       } catch (error) {
@@ -335,14 +357,11 @@ function BuilderPanel() {
           );
         }
       } finally {
-        if (isActive) {
-          setIsLoadingPages(false);
-        }
+        if (isActive) setIsLoadingPages(false);
       }
     }
 
     loadPages();
-
     return () => {
       isActive = false;
     };
@@ -388,10 +407,11 @@ function BuilderPanel() {
       }
 
       setPages((currentPages) => {
-        if (currentPages.some((currentPage) => currentPage.path === page.routePath)) {
+        if (
+          currentPages.some((currentPage) => currentPage.path === page.routePath)
+        ) {
           return currentPages;
         }
-
         return [
           ...currentPages,
           {
@@ -412,15 +432,10 @@ function BuilderPanel() {
   }
 
   async function handleDeletePage(page: BuilderPage) {
-    if (!page.slug || deletingSlug) {
-      return;
-    }
+    if (!page.slug || deletingSlug) return;
 
     const shouldDelete = window.confirm(`Delete "${page.title}"?`);
-
-    if (!shouldDelete) {
-      return;
-    }
+    if (!shouldDelete) return;
 
     setDeletingSlug(page.slug);
     setPagesError("");
@@ -442,15 +457,10 @@ function BuilderPanel() {
         const nextPages = currentPages.filter(
           (currentPage) => currentPage.slug !== page.slug
         );
-
         setSelectedPath((currentPath) => {
-          if (currentPath !== page.path) {
-            return currentPath;
-          }
-
+          if (currentPath !== page.path) return currentPath;
           return nextPages[0]?.path ?? "/";
         });
-
         return nextPages;
       });
     } catch {
@@ -461,50 +471,52 @@ function BuilderPanel() {
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <PanelHeader
-        icon={LayoutTemplate}
-        title="Builder"
-        description="Arrange pages visually while keeping every block backed by real React components."
+        icon={StickyNote}
+        title="Pages"
+        description="Manage and create pages for your website."
       />
 
-      <section className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
-        <div className="rounded-lg border border-border bg-card p-4">
+      <div className="grid gap-4 xl:grid-cols-[268px_1fr]">
+        {/* Pages list */}
+        <div className="rounded-xl border border-border/60 bg-card p-4">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold">Pages</h2>
+            <p className="text-xs font-medium text-muted-foreground">Pages</p>
             <Button
               size="sm"
               type="button"
               variant="outline"
+              className="h-7 gap-1 px-2 text-xs"
               onClick={() => {
                 setIsCreatingPage(true);
                 setCreatePageError("");
               }}
             >
-              <Plus className="size-4" />
+              <Plus className="size-3.5" />
               New
             </Button>
           </div>
 
-          <div className="mt-3 grid gap-2">
-            {isLoadingPages ? (
-              <p className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" />
-                Loading pages
-              </p>
-            ) : null}
+          <div className="mt-3 grid gap-1.5">
+            {isLoadingPages && (
+              <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/60 px-3 py-2.5 text-xs text-muted-foreground">
+                <Loader2 className="size-3.5 animate-spin" />
+                Loading pages…
+              </div>
+            )}
 
-            {pagesError ? (
-              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
+            {pagesError && (
+              <p className="rounded-lg border border-destructive/25 bg-destructive/8 px-3 py-2.5 text-xs text-destructive">
                 {pagesError}
               </p>
-            ) : null}
+            )}
 
-            {!isLoadingPages && !pagesError && pages.length === 0 ? (
-              <p className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-muted-foreground">
-                No pages found.
+            {!isLoadingPages && !pagesError && pages.length === 0 && (
+              <p className="rounded-lg border border-border/60 bg-background/60 px-3 py-2.5 text-xs text-muted-foreground">
+                No pages yet.
               </p>
-            ) : null}
+            )}
 
             {pages.map((page) => (
               <PageRow
@@ -521,43 +533,48 @@ function BuilderPanel() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-border bg-card">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-            <div>
-              <h2 className="text-sm font-semibold">{selectedPage.title}</h2>
-              <p className="text-xs text-muted-foreground">{selectedPage.path}</p>
+        {/* Page detail */}
+        <div className="rounded-xl border border-border/60 bg-card">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold">{selectedPage.title}</p>
+              <p className="truncate font-mono text-xs text-muted-foreground">
+                {selectedPage.path}
+              </p>
             </div>
-            <div className="flex gap-2">
-              <Button asChild size="sm">
+            <div className="flex shrink-0 gap-2">
+              <Button asChild size="sm" className="gap-1.5 bg-blue-500">
                 <Link
                   href={`/lx-admin/editor?path=${encodeURIComponent(selectedPage.path)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <LayoutTemplate className="size-4" />
-                  Edit the Page
+                  <LayoutTemplate className="size-3.5" />
+                  Edit with Visual Editor
                 </Link>
               </Button>
-              <Button size="sm" variant="outline">
-                <MonitorSmartphone className="size-4" />
+              <Button size="sm" variant="default" className="gap-1.5">
+                <MonitorSmartphone className="size-3.5" />
                 Preview
               </Button>
             </div>
           </div>
 
-          <div className="grid gap-3 p-4">
-            <div className="rounded-lg border border-dashed border-border bg-background px-5 py-7 text-center">
-              <LayoutTemplate className="mx-auto size-5 text-muted-foreground" />
+          <div className="p-4">
+            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border/60 bg-background/40 py-12 text-center">
+              <div className="flex size-10 items-center justify-center rounded-lg border border-border/60 bg-card text-muted-foreground">
+                <LayoutTemplate className="size-5" />
+              </div>
               <p className="mt-3 text-sm font-medium">Page canvas</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Reusable blocks now live in the Blocks section.
+                Reusable blocks live in the Blocks section.
               </p>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {isCreatingPage ? (
+      {isCreatingPage && (
         <PageCreateModal
           createPageError={createPageError}
           isSubmittingPage={isSubmittingPage}
@@ -569,8 +586,7 @@ function BuilderPanel() {
           }}
           onSubmit={handleCreatePage}
         />
-      ) : null}
-
+      )}
     </div>
   );
 }
@@ -604,12 +620,11 @@ function BlocksPanel() {
           throw new Error("The components response was invalid.");
         }
 
-        const apiComponents: unknown[] = payload.components;
-        const loadedComponents = apiComponents.filter(isComponentApiItem);
+        const loadedComponents = (payload.components as unknown[]).filter(
+          isComponentApiItem
+        );
 
-        if (!isActive) {
-          return;
-        }
+        if (!isActive) return;
 
         setComponents(loadedComponents);
         setSelectedSlug((currentSlug) => {
@@ -618,26 +633,20 @@ function BlocksPanel() {
           ) {
             return currentSlug;
           }
-
           return loadedComponents[0]?.slug ?? "";
         });
       } catch (error) {
         if (isActive) {
           setComponentsError(
-            error instanceof Error
-              ? error.message
-              : "Could not load components."
+            error instanceof Error ? error.message : "Could not load components."
           );
         }
       } finally {
-        if (isActive) {
-          setIsLoadingComponents(false);
-        }
+        if (isActive) setIsLoadingComponents(false);
       }
     }
 
     loadComponents();
-
     return () => {
       isActive = false;
     };
@@ -688,7 +697,6 @@ function BlocksPanel() {
         ) {
           return currentComponents;
         }
-
         return [...currentComponents, payload.component].sort((a, b) =>
           a.name.localeCompare(b.name)
         );
@@ -704,15 +712,10 @@ function BlocksPanel() {
   }
 
   async function handleDeleteComponent(component: ReusableComponent) {
-    if (deletingComponentSlug) {
-      return;
-    }
+    if (deletingComponentSlug) return;
 
     const shouldDelete = window.confirm(`Delete "${component.name}"?`);
-
-    if (!shouldDelete) {
-      return;
-    }
+    if (!shouldDelete) return;
 
     setDeletingComponentSlug(component.slug);
     setComponentsError("");
@@ -734,15 +737,10 @@ function BlocksPanel() {
         const nextComponents = currentComponents.filter(
           (currentComponent) => currentComponent.slug !== component.slug
         );
-
         setSelectedSlug((currentSlug) => {
-          if (currentSlug !== component.slug) {
-            return currentSlug;
-          }
-
+          if (currentSlug !== component.slug) return currentSlug;
           return nextComponents[0]?.slug ?? "";
         });
-
         return nextComponents;
       });
     } catch {
@@ -757,52 +755,56 @@ function BlocksPanel() {
     components[0] ?? { name: "No component selected", slug: "", filePath: "" };
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <PanelHeader
         icon={Boxes}
         title="Blocks"
         description="Create reusable components that sync from the lx-components folder."
       />
 
-      <section className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
-        <div className="rounded-lg border border-border bg-card p-4">
+      <div className="grid gap-4 xl:grid-cols-[268px_1fr]">
+        {/* Components list */}
+        <div className="rounded-xl border border-border/60 bg-card p-4">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold">Components</h2>
+            <p className="text-xs font-medium text-muted-foreground">
+              Components
+            </p>
             <Button
               size="sm"
               type="button"
               variant="outline"
+              className="h-7 gap-1 px-2 text-xs"
               onClick={() => {
                 setIsCreatingComponent(true);
                 setCreateComponentError("");
               }}
             >
-              <Plus className="size-4" />
+              <Plus className="size-3.5" />
               Create
             </Button>
           </div>
 
-          <div className="mt-3 grid gap-2">
-            {isLoadingComponents ? (
-              <p className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" />
-                Loading components
-              </p>
-            ) : null}
+          <div className="mt-3 grid gap-1.5">
+            {isLoadingComponents && (
+              <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/60 px-3 py-2.5 text-xs text-muted-foreground">
+                <Loader2 className="size-3.5 animate-spin" />
+                Loading components…
+              </div>
+            )}
 
-            {componentsError ? (
-              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
+            {componentsError && (
+              <p className="rounded-lg border border-destructive/25 bg-destructive/8 px-3 py-2.5 text-xs text-destructive">
                 {componentsError}
               </p>
-            ) : null}
+            )}
 
             {!isLoadingComponents &&
-            !componentsError &&
-            components.length === 0 ? (
-              <p className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-muted-foreground">
-                No components found.
-              </p>
-            ) : null}
+              !componentsError &&
+              components.length === 0 && (
+                <p className="rounded-lg border border-border/60 bg-background/60 px-3 py-2.5 text-xs text-muted-foreground">
+                  No components yet.
+                </p>
+              )}
 
             {components.map((component) => (
               <ComponentRow
@@ -817,11 +819,14 @@ function BlocksPanel() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-border bg-card">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-            <div>
-              <h2 className="text-sm font-semibold">{selectedComponent.name}</h2>
-              <p className="font-mono text-xs text-muted-foreground">
+        {/* Component detail */}
+        <div className="rounded-xl border border-border/60 bg-card">
+          <div className="flex flex-wrap items-center gap-3 border-b border-border/60 px-4 py-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold">
+                {selectedComponent.name}
+              </p>
+              <p className="truncate font-mono text-xs text-muted-foreground">
                 {selectedComponent.slug
                   ? `lx-components/${selectedComponent.slug}/component.tsx`
                   : "lx-components"}
@@ -829,32 +834,35 @@ function BlocksPanel() {
             </div>
           </div>
 
-          <div className="grid gap-3 p-4">
-            <div className="rounded-lg border border-dashed border-border bg-background px-5 py-7">
+          <div className="p-4">
+            <div className="rounded-lg border border-dashed border-border/60 bg-background/40 p-5">
               <div className="flex items-start gap-3">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-card text-muted-foreground">
                   <Boxes className="size-4" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium">Hybrid component source</p>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    Components created here are real files. Components created
-                    in your editor under `lx-components/*/component.tsx` will
-                    appear here after reload.
+                    Components created here are real files. Components created in
+                    your editor under{" "}
+                    <code className="font-mono text-[11px]">
+                      lx-components/*/component.tsx
+                    </code>{" "}
+                    will appear here after reload.
                   </p>
-                  {selectedComponent.filePath ? (
-                    <p className="mt-3 truncate font-mono text-xs text-muted-foreground">
+                  {selectedComponent.filePath && (
+                    <p className="mt-3 truncate font-mono text-[11px] text-muted-foreground/70">
                       {selectedComponent.filePath}
                     </p>
-                  ) : null}
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {isCreatingComponent ? (
+      {isCreatingComponent && (
         <ComponentCreateModal
           createComponentError={createComponentError}
           isSubmittingComponent={isSubmittingComponent}
@@ -866,23 +874,25 @@ function BlocksPanel() {
           }}
           onSubmit={handleCreateComponent}
         />
-      ) : null}
+      )}
     </div>
   );
 }
 
 function SitePanel() {
   return (
-    <div className="grid gap-7">
+    <div className="grid gap-5">
       <PanelHeader
-        icon={Globe2}
+        icon={Settings}
         title="Site Settings"
         description="Configure site identity, publishing metadata, and starter-level preferences."
       />
 
-      <section className="grid gap-5 xl:grid-cols-2">
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold">Site Identity</h2>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <div className="rounded-xl border border-border/60 bg-card p-5">
+          <p className="text-xs font-medium text-muted-foreground">
+            Site Identity
+          </p>
           <div className="mt-4 grid gap-3">
             <SettingField label="Site name" value="Lyrix Starter" />
             <SettingField label="Production URL" value="https://example.com" />
@@ -890,18 +900,20 @@ function SitePanel() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold">Publishing</h2>
+        <div className="rounded-xl border border-border/60 bg-card p-5">
+          <p className="text-xs font-medium text-muted-foreground">Publishing</p>
           <div className="mt-4 grid gap-3">
             <SettingToggle label="Draft protection" enabled />
             <SettingToggle label="Search indexing" enabled />
             <SettingToggle label="Plugin execution" />
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
+
+// ── Shared components ──────────────────────────────────────────────────────────
 
 function PanelHeader({
   icon: Icon,
@@ -913,30 +925,27 @@ function PanelHeader({
   description: string;
 }) {
   return (
-    <section className="border-b border-border pb-4">
-      <div className="flex items-start gap-3">
-        <div className="flex size-9 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
-          <Icon className="size-4" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
-            Lyrix Studio
-          </p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-normal">{title}</h2>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            {description}
-          </p>
-        </div>
+    <div className="flex items-start gap-3 border-b border-border/60 pb-5">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/12 text-primary ring-1 ring-inset ring-primary/20">
+        <Icon className="size-4" />
       </div>
-    </section>
+      <div className="min-w-0 pt-0.5">
+        <h1 className="text-lg font-semibold leading-none tracking-tight">
+          {title}
+        </h1>
+        <p className="mt-1.5 max-w-lg text-xs leading-relaxed text-muted-foreground">
+          {description}
+        </p>
+      </div>
+    </div>
   );
 }
 
 function AiQueueItem({ title, status }: { title: string; status: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2">
-      <span>{title}</span>
-      <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-background/60 px-3 py-2">
+      <span className="text-sm">{title}</span>
+      <span className="rounded-full border border-border/60 bg-muted px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
         {status}
       </span>
     </div>
@@ -958,11 +967,10 @@ function ComponentRow({
 }) {
   return (
     <div
-      className={`group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1 rounded-lg border transition-colors ${
-        active
-          ? "border-primary/20 bg-primary/10"
-          : "border-border bg-background hover:bg-muted"
-      }`}
+      className={`group grid grid-cols-[1fr_auto] items-center gap-1 rounded-lg border transition-colors ${active
+        ? "border-primary/20 bg-primary/8"
+        : "border-border/60 bg-background/40 hover:bg-muted/40"
+        }`}
     >
       <button
         type="button"
@@ -970,10 +978,10 @@ function ComponentRow({
         className="min-w-0 px-3 py-2 text-left"
       >
         <span className="flex items-center gap-2 text-sm font-medium">
-          <Boxes className="size-4 shrink-0 text-muted-foreground" />
+          <Boxes className="size-3.5 shrink-0 text-muted-foreground" />
           <span className="truncate">{component.name}</span>
         </span>
-        <span className="mt-1 block truncate font-mono text-xs text-muted-foreground">
+        <span className="mt-0.5 block truncate font-mono text-[11px] text-muted-foreground/70">
           {component.slug}
         </span>
       </button>
@@ -982,12 +990,12 @@ function ComponentRow({
         type="button"
         disabled={isDeleting}
         onClick={onDelete}
-        className="mr-2 flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-60"
+        className="mr-1.5 flex size-7 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-50"
       >
         {isDeleting ? (
-          <Loader2 className="size-4 animate-spin" />
+          <Loader2 className="size-3.5 animate-spin" />
         ) : (
-          <Trash2 className="size-4" />
+          <Trash2 className="size-3.5" />
         )}
       </button>
     </div>
@@ -1007,28 +1015,29 @@ function ComponentCreateModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-foreground/25 px-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 grid place-items-center bg-background/60 px-4 backdrop-blur-sm"
       role="presentation"
       onMouseDown={onClose}
     >
       <form
-        className="w-full max-w-md rounded-lg border border-border bg-card p-4 shadow-xl"
-        onMouseDown={(event) => event.stopPropagation()}
+        className="w-full max-w-sm rounded-xl border border-border/60 bg-card p-5 shadow-2xl"
+        onMouseDown={(e) => e.stopPropagation()}
         onSubmit={onSubmit}
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold">Create Component</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <h2 className="text-sm font-semibold">Create Component</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
               Add a reusable block to lx-components.
             </p>
           </div>
           <Button
-            aria-label="Close create component modal"
+            aria-label="Close"
             disabled={isSubmittingComponent}
             size="icon-xs"
             type="button"
             variant="ghost"
+            className="shrink-0 text-muted-foreground"
             onClick={onClose}
           >
             <X className="size-4" />
@@ -1045,7 +1054,7 @@ function ComponentCreateModal({
           />
           <LyrixInput
             error={createComponentError}
-            hint="Optional. Generated from the name if empty."
+            hint="Optional. Generated from name if empty."
             inputSize="sm"
             label="Slug"
             name="slug"
@@ -1066,11 +1075,11 @@ function ComponentCreateModal({
           <Button disabled={isSubmittingComponent} size="sm" type="submit">
             {isSubmittingComponent ? (
               <>
-                <Loader2 className="size-4 animate-spin" />
-                Creating
+                <Loader2 className="size-3.5 animate-spin" />
+                Creating…
               </>
             ) : (
-              "Create Component"
+              "Create"
             )}
           </Button>
         </div>
@@ -1098,11 +1107,10 @@ function PageRow({
 }) {
   return (
     <div
-      className={`group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1 rounded-lg border transition-colors ${
-        active
-          ? "border-primary/20 bg-primary/10"
-          : "border-border bg-background hover:bg-muted"
-      }`}
+      className={`group grid grid-cols-[1fr_auto] items-center gap-1 rounded-lg border transition-colors ${active
+        ? "border-primary/20 bg-primary/8"
+        : "border-border/60 bg-background/40 hover:bg-muted/40"
+        }`}
     >
       <button
         type="button"
@@ -1110,28 +1118,28 @@ function PageRow({
         className="min-w-0 px-3 py-2 text-left"
       >
         <span className="flex items-center gap-2 text-sm font-medium">
-          <FileText className="size-4 shrink-0 text-muted-foreground" />
+          <FileText className="size-3.5 shrink-0 text-muted-foreground" />
           <span className="truncate">{title}</span>
         </span>
-        <span className="mt-1 block truncate font-mono text-xs text-muted-foreground">
+        <span className="mt-0.5 block truncate font-mono text-[11px] text-muted-foreground/70">
           {path}
         </span>
       </button>
-      {canDelete ? (
+      {canDelete && (
         <button
           aria-label={`Delete ${title}`}
           type="button"
           disabled={isDeleting}
           onClick={onDelete}
-          className="mr-2 flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-60"
+          className="mr-1.5 flex size-7 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-50"
         >
           {isDeleting ? (
-            <Loader2 className="size-4 animate-spin" />
+            <Loader2 className="size-3.5 animate-spin" />
           ) : (
-            <Trash2 className="size-4" />
+            <Trash2 className="size-3.5" />
           )}
         </button>
-      ) : null}
+      )}
     </div>
   );
 }
@@ -1149,28 +1157,29 @@ function PageCreateModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-foreground/25 px-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 grid place-items-center bg-background/60 px-4 backdrop-blur-sm"
       role="presentation"
       onMouseDown={onClose}
     >
       <form
-        className="w-full max-w-md rounded-lg border border-border bg-card p-4 shadow-xl"
-        onMouseDown={(event) => event.stopPropagation()}
+        className="w-full max-w-sm rounded-xl border border-border/60 bg-card p-5 shadow-2xl"
+        onMouseDown={(e) => e.stopPropagation()}
         onSubmit={onSubmit}
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold">Create Page</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <h2 className="text-sm font-semibold">Create Page</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
               Add a new route to this starter project.
             </p>
           </div>
           <Button
-            aria-label="Close create page modal"
+            aria-label="Close"
             disabled={isSubmittingPage}
             size="icon-xs"
             type="button"
             variant="ghost"
+            className="shrink-0 text-muted-foreground"
             onClick={onClose}
           >
             <X className="size-4" />
@@ -1187,7 +1196,7 @@ function PageCreateModal({
           />
           <LyrixInput
             error={createPageError}
-            hint="Optional. Generated from the name if empty."
+            hint="Optional. Generated from name if empty."
             inputSize="sm"
             label="Slug"
             name="slug"
@@ -1208,11 +1217,11 @@ function PageCreateModal({
           <Button disabled={isSubmittingPage} size="sm" type="submit">
             {isSubmittingPage ? (
               <>
-                <Loader2 className="size-4 animate-spin" />
-                Creating
+                <Loader2 className="size-3.5 animate-spin" />
+                Creating…
               </>
             ) : (
-              "Create Page"
+              "Create"
             )}
           </Button>
         </div>
@@ -1224,9 +1233,9 @@ function PageCreateModal({
 function SettingField({ label, value }: { label: string; value: string }) {
   return (
     <label className="grid gap-1.5">
-      <span className="text-sm font-medium">{label}</span>
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
       <input
-        className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition-colors focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+        className="h-9 w-full rounded-lg border border-border/60 bg-background/60 px-3 text-sm outline-none transition-colors focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
         defaultValue={value}
       />
     </label>
@@ -1241,17 +1250,15 @@ function SettingToggle({
   enabled?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2">
+    <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background/60 px-3 py-2.5">
       <span className="text-sm">{label}</span>
       <span
-        className={`relative h-6 w-10 rounded-full transition-colors ${
-          enabled ? "bg-primary" : "bg-muted"
-        }`}
+        className={`relative h-5 w-9 rounded-full transition-colors ${enabled ? "bg-primary" : "bg-muted"
+          }`}
       >
         <span
-          className={`absolute top-1 size-4 rounded-full bg-white transition-transform ${
-            enabled ? "translate-x-5" : "translate-x-1"
-          }`}
+          className={`absolute top-0.5 size-4 rounded-full bg-white shadow-sm transition-transform ${enabled ? "translate-x-4" : "translate-x-0.5"
+            }`}
         />
       </span>
     </div>

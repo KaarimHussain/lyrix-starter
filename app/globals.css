@@ -135,6 +135,78 @@
   @apply container mx-auto px-5 sm:px-7 md:px-15 lg:px-20 xl:px-35;
 }
 
+.lx-preview {
+  container-type: inline-size;
+  contain: layout paint style;
+}
+
+.lx-preview .container-layout {
+  width: 100%;
+  max-width: 100%;
+}
+
+.lx-preview-tablet .container-layout,
+.lx-preview-mobile .container-layout {
+  padding-inline: 24px;
+}
+
+.lx-preview-mobile .container-layout {
+  padding-inline: 18px;
+}
+
+@container (max-width: 767px) {
+  .lx-preview :is(.text-5xl, .text-4xl) {
+    font-size: 2.25rem;
+    line-height: 1.08;
+  }
+
+  .lx-preview :is(.text-3xl) {
+    font-size: 1.75rem;
+    line-height: 1.15;
+  }
+
+  .lx-preview :is(.text-2xl) {
+    font-size: 1.5rem;
+    line-height: 1.2;
+  }
+
+  .lx-preview :is(.max-w-4xl, .max-w-3xl, .max-w-2xl) {
+    max-width: 100%;
+  }
+
+  .lx-preview :is(.py-8, .py-5, .py-4) {
+    padding-block: 2rem;
+  }
+
+  .lx-preview .md\:grid-cols-3 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .lx-preview .sm\:flex-row {
+    flex-direction: column !important;
+  }
+
+  .lx-preview .sm\:items-end {
+    align-items: stretch !important;
+  }
+
+  .lx-preview .sm\:justify-between {
+    justify-content: flex-start !important;
+  }
+}
+
+@container (min-width: 768px) and (max-width: 1023px) {
+  .lx-preview :is(.text-5xl) {
+    font-size: 3rem;
+    line-height: 1.08;
+  }
+
+  .lx-preview :is(.text-4xl) {
+    font-size: 2.5rem;
+    line-height: 1.1;
+  }
+}
+
 /* Custom Textures */
 .bg-dot-grid {
   background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);

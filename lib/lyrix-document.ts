@@ -7,6 +7,8 @@ export type LyrixElementType =
   | "divider"
   | "spacer"
   | "text"
+  | "video"
+  | "icon-list"
   | "cta"
   | "feature-grid";
 
@@ -15,25 +17,121 @@ export type LyrixSpacing = {
   right?: string;
   bottom?: string;
   left?: string;
-  unit?: "px" | "%" | "rem";
+  unit?: "px" | "%" | "em" | "rem" | "vh" | "vw";
+};
+
+export type LyrixContainerLayout = {
+  containerType?: "flex" | "grid";
+  contentWidth?: "boxed" | "full";
+  width?: string;
+  minHeight?: string;
+  minHeightUnit?: "px" | "vh";
+  direction?: "row" | "column" | "row-reverse" | "column-reverse";
+  justifyContent?:
+    | "flex-start"
+    | "center"
+    | "flex-end"
+    | "space-between"
+    | "space-around"
+    | "space-evenly";
+  alignItems?: "flex-start" | "center" | "flex-end" | "stretch";
+  gap?: string;
+  gapUnit?: "px" | "%" | "vw";
+  wrap?: "nowrap" | "wrap" | "wrap-reverse";
+  gridOutline?: "show" | "hide";
+  columns?: string;
+  columnUnit?: "fr" | "custom";
+  columnTemplate?: string;
+  rows?: string;
+  rowUnit?: "fr" | "custom";
+  rowTemplate?: string;
+  columnGap?: string;
+  rowGap?: string;
+  gridGapUnit?: "px" | "%" | "rem" | "vw";
+  autoFlow?: "row" | "column" | "dense" | "row dense" | "column dense";
+  gridJustifyItems?: "start" | "center" | "end" | "stretch";
+  gridAlignItems?: "start" | "center" | "end" | "stretch";
+  gridJustifyContent?:
+    | "start"
+    | "center"
+    | "end"
+    | "space-between"
+    | "space-around"
+    | "space-evenly";
+  gridAlignContent?:
+    | "start"
+    | "center"
+    | "end"
+    | "space-between"
+    | "space-around"
+    | "space-evenly";
 };
 
 export type LyrixElementStyle = {
+  // ── existing ──
+  backgroundType?: "solid" | "transparent";
   backgroundColor?: string;
   textColor?: string;
+  titleColor?: string;
+  bodyColor?: string;
   borderColor?: string;
   borderWidth?: string;
   borderRadius?: string;
+  opacity?: string;
   boxShadow?: string;
   alignment?: "left" | "center" | "right";
+  fontSize?: string;
+  bodyFontSize?: string;
+  fontWeight?: string;
+  lineHeight?: string;
+  buttonBackgroundColor?: string;
+  buttonTextColor?: string;
+  imageFit?: "contain" | "cover";
+  dividerColor?: string;
+  dividerWidth?: string;
+  // ── typography extensions ──
+  letterSpacing?: string;
+  textTransform?: "uppercase" | "lowercase" | "capitalize";
+  fontStyle?: "normal" | "italic";
+  textDecoration?: "none" | "underline" | "line-through";
+  bodyWeight?: string;
+  // ── background image ──
+  backgroundImage?: string;
+  backgroundSize?: "cover" | "contain" | "auto";
+  backgroundPosition?: "center" | "top" | "bottom" | "left" | "right";
+  backgroundRepeat?: "no-repeat" | "repeat" | "repeat-x" | "repeat-y";
+  // ── visual effects ──
+  filter?: string;
+  backdropFilter?: string;
+  transition?: string;
+  cursor?: string;
+  overflow?: "hidden" | "visible" | "auto" | "scroll";
+  mixBlendMode?: string;
+  // ── divider extensions ──
+  dividerStyle?: "solid" | "dashed" | "dotted";
+  // ── icon list extensions ──
+  bulletColor?: string;
+  bulletStyle?: "dot" | "check" | "dash" | "arrow";
+  // ── feature grid card extensions ──
+  cardBackgroundColor?: string;
+  cardBorderColor?: string;
+  cardBorderRadius?: string;
+  cardBoxShadow?: string;
+  // ── button extensions ──
+  buttonWidth?: "auto" | "full";
 };
 
 export type LyrixElementAdvanced = {
   margin?: LyrixSpacing;
   padding?: LyrixSpacing;
   width?: string;
+  widthMode?: "default" | "full" | "inline" | "custom";
   alignSelf?: "auto" | "start" | "center" | "end" | "stretch";
   order?: string;
+  orderMode?: "default" | "start" | "end" | "custom";
+  sizeMode?: "default" | "none" | "grow" | "shrink" | "custom";
+  flexGrow?: string;
+  flexShrink?: string;
   position?: "default" | "relative" | "absolute";
   zIndex?: string;
   cssId?: string;
@@ -51,8 +149,10 @@ export type LyrixElement = {
     buttonHref?: string;
     imageSrc?: string;
     imageAlt?: string;
+    videoUrl?: string;
     height?: string;
     items?: string[];
+    layout?: LyrixContainerLayout;
     style?: LyrixElementStyle;
     advanced?: LyrixElementAdvanced;
   };
@@ -83,6 +183,32 @@ export const sectionTemplates: SectionTemplate[] = [
       eyebrow: "Container",
       title: "Container",
       body: "Drop widgets inside this container.",
+      layout: {
+        containerType: "flex",
+        contentWidth: "boxed",
+        width: "1140",
+        minHeight: "",
+        minHeightUnit: "px",
+        direction: "column",
+        justifyContent: "flex-start",
+        alignItems: "stretch",
+        gap: "20",
+        gapUnit: "px",
+        wrap: "nowrap",
+        gridOutline: "show",
+        columns: "3",
+        columnUnit: "fr",
+        rows: "2",
+        rowUnit: "fr",
+        columnGap: "20",
+        rowGap: "20",
+        gridGapUnit: "px",
+        autoFlow: "row",
+        gridJustifyItems: "stretch",
+        gridAlignItems: "stretch",
+        gridJustifyContent: "start",
+        gridAlignContent: "start",
+      },
     },
   },
   {
@@ -109,12 +235,31 @@ export const sectionTemplates: SectionTemplate[] = [
   },
   {
     type: "text",
-    label: "Text",
-    description: "A simple content section for readable copy.",
+    label: "Text Editor",
+    description: "A focused rich copy block without section chrome.",
     props: {
       eyebrow: "Content",
-      title: "A clear section heading",
-      body: "Write focused page copy here. Keep the first version simple and fast.",
+      title: "Text Editor",
+      body: "Write focused page copy here.",
+    },
+  },
+  {
+    type: "video",
+    label: "Video",
+    description: "Responsive video embed for product demos and media.",
+    props: {
+      title: "Video",
+      videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      height: "320",
+    },
+  },
+  {
+    type: "icon-list",
+    label: "Icon List",
+    description: "Compact list for features, benefits, or steps.",
+    props: {
+      title: "Icon List",
+      items: ["Fast setup", "Responsive editing", "Reusable widgets"],
     },
   },
   {
@@ -271,6 +416,8 @@ function isLyrixElementType(value: unknown): value is LyrixElementType {
     value === "divider" ||
     value === "spacer" ||
     value === "text" ||
+    value === "video" ||
+    value === "icon-list" ||
     value === "cta" ||
     value === "feature-grid"
   );

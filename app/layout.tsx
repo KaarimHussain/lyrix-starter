@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter_Tight, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { DevErrorOverlay } from "@/components/DevErrorOverlay";
 
 
 const interTight = Inter_Tight({
@@ -34,6 +35,7 @@ export default function RootLayout({
         className={`${interTight.variable} ${geistMono.variable} font-sans antialiased`}
       >
         {children}
+        {process.env.NODE_ENV === "development" && <DevErrorOverlay />}
       </body>
     </html>
   );
