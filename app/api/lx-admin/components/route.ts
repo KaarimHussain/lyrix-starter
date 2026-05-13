@@ -35,8 +35,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const name = typeof body?.name === "string" ? body.name : "";
     const slug = typeof body?.slug === "string" ? body.slug : undefined;
+    const category = typeof body?.category === "string" ? body.category : undefined;
     const componentService = new LyrixComponentService();
-    const component = await componentService.createComponent({ name, slug });
+    const component = await componentService.createComponent({ name, slug, category } as Parameters<typeof componentService.createComponent>[0]);
 
     return NextResponse.json({ component }, { status: 201 });
   } catch (error) {

@@ -2,7 +2,9 @@ import { mkdir, readdir, readFile, rm, stat, writeFile } from "fs/promises";
 import path from "path";
 import {
   createDefaultPageDocument,
+  isLyrixBlockDocument,
   isLyrixPageDocument,
+  LyrixElement,
   LyrixPageDocument,
 } from "@/lib/lyrix-document";
 
@@ -215,7 +217,7 @@ export class LyrixPageService {
     });
   }
 
-  async getPageDocument(routePath: string): Promise<LyrixPageDocument> {
+  async getRawPageDocument(routePath: string): Promise<LyrixPageDocument> {
     const page = await this.getPageByRoutePath(routePath);
     const documentFilePath = await this.getPageDocumentFilePath(page.slug);
 
@@ -232,6 +234,45 @@ export class LyrixPageService {
       title: page.name,
       path: page.routePath,
     });
+  }
+
+  async getPageDocument(routePath: string): Promise<LyrixPageDocument> {
+    const raw = await this.getRawPageDocument(routePath);
+    return {
+      ...raw,
+      elements: await this.resolveBlockRefs(raw.elements),
+    };
+  }
+
+  private async resolveBlockRefs(elements: LyrixElement[]): Promise<LyrixElement[]> {
+    const result: LyrixElement[] = [];
+
+    for (const element of elements) {
+      if (element.type === "block-ref") {
+        const blockElements = await this.loadBlockElements(element.props.blockSlug ?? "");
+        result.push(...blockElements);
+      } else if (element.children?.length) {
+        result.push({ ...element, children: await this.resolveBlockRefs(element.children) });
+      } else {
+        result.push(element);
+      }
+    }
+
+    return result;
+  }
+
+  private async loadBlockElements(slug: string): Promise<LyrixElement[]> {
+    if (!slug) return [];
+
+    try {
+      const blockPath = path.join(process.cwd(), "lx-components", slug, "lyrix-block.json");
+      const source = await readFile(blockPath, "utf8");
+      const parsed = JSON.parse(source) as unknown;
+      if (!isLyrixBlockDocument(parsed)) return [];
+      return parsed.elements;
+    } catch {
+      return [];
+    }
   }
 
   async savePageDocument(routePath: string, document: LyrixPageDocument) {

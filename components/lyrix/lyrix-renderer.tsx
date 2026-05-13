@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { Layers } from "lucide-react";
 import type {
   LyrixContainerLayout,
   LyrixElement,
@@ -51,7 +52,30 @@ export function LyrixElementView({ element, nested = false }: LyrixElementViewPr
       return <FeatureGridElement element={element} nested={nested} />;
     case "cta":
       return <CtaElement element={element} nested={nested} />;
+    case "block-ref":
+      return <BlockRefElement element={element} />;
   }
+}
+
+function BlockRefElement({ element }: LyrixElementViewProps) {
+  return (
+    <section className="container-layout py-3">
+      <div className="flex items-center gap-3 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 py-3">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+          <Layers className="size-4 text-primary" />
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-foreground">{element.props.title}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            Reusable Block · {element.props.blockSlug}
+          </p>
+        </div>
+        <span className="ml-auto shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+          Block
+        </span>
+      </div>
+    </section>
+  );
 }
 
 function HeadingElement({ element, nested = false }: LyrixElementViewProps) {

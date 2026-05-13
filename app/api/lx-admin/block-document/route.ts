@@ -1,30 +1,29 @@
 import { NextResponse } from "next/server";
 import { hasLxAdminSession } from "@/lib/lx-admin-auth";
-import { isLyrixPageDocument } from "@/lib/lyrix-document";
-import { LyrixPageService } from "@/lib/lyrix-page-service";
+import { isLyrixBlockDocument } from "@/lib/lyrix-document";
+import { LyrixComponentService } from "@/lib/lyrix-component-service";
 
-function readPathFromUrl(request: Request) {
+function readSlugFromUrl(request: Request) {
   const url = new URL(request.url);
-
-  return url.searchParams.get("path") ?? "/";
+  return url.searchParams.get("slug") ?? "";
 }
 
 export async function GET(request: Request) {
   if (!(await hasLxAdminSession())) {
     return NextResponse.json(
-      { error: "You must be signed in to edit pages." },
+      { error: "You must be signed in to edit blocks." },
       { status: 401 }
     );
   }
 
   try {
-    const pageService = new LyrixPageService();
-    const document = await pageService.getRawPageDocument(readPathFromUrl(request));
+    const service = new LyrixComponentService();
+    const document = await service.getBlockDocument(readSlugFromUrl(request));
 
     return NextResponse.json({ document });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Unable to load page document.";
+      error instanceof Error ? error.message : "Unable to load block document.";
     const status = message.includes("does not exist") ? 404 : 400;
 
     return NextResponse.json({ error: message }, { status });
@@ -34,33 +33,30 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   if (!(await hasLxAdminSession())) {
     return NextResponse.json(
-      { error: "You must be signed in to save pages." },
+      { error: "You must be signed in to save blocks." },
       { status: 401 }
     );
   }
 
   try {
     const body = await request.json();
-    const routePath = typeof body?.path === "string" ? body.path : "/";
+    const slug = typeof body?.slug === "string" ? body.slug : "";
     const document = body?.document;
 
-    if (!isLyrixPageDocument(document)) {
+    if (!isLyrixBlockDocument(document)) {
       return NextResponse.json(
-        { error: "Invalid Lyrix page document." },
+        { error: "Invalid Lyrix block document." },
         { status: 400 }
       );
     }
 
-    const pageService = new LyrixPageService();
-    const savedDocument = await pageService.savePageDocument(
-      routePath,
-      document
-    );
+    const service = new LyrixComponentService();
+    const savedDocument = await service.saveBlockDocument(slug, document);
 
     return NextResponse.json({ document: savedDocument });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Unable to save page document.";
+      error instanceof Error ? error.message : "Unable to save block document.";
     const status = message.includes("does not exist") ? 404 : 400;
 
     return NextResponse.json({ error: message }, { status });

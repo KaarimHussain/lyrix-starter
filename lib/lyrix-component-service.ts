@@ -1,14 +1,22 @@
 import { mkdir, readdir, readFile, rm, stat, writeFile } from "fs/promises";
 import path from "path";
+import {
+  createDefaultBlockDocument,
+  isLyrixBlockDocument,
+  LyrixBlockCategory,
+  LyrixBlockDocument,
+} from "@/lib/lyrix-document";
 
 type CreateComponentInput = {
   name: string;
   slug?: string;
+  category?: LyrixBlockCategory;
 };
 
 export type LyrixComponent = {
   name: string;
   slug: string;
+  category: LyrixBlockCategory;
   filePath: string;
 };
 
@@ -81,13 +89,13 @@ export default function ${componentName}() {
   return (
     <section className="rounded-lg border border-border bg-card p-6">
       <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
-        Lyrix Component
+        Lyrix Block
       </p>
       <h2 className="mt-3 text-2xl font-semibold tracking-normal">
         {componentTitle}
       </h2>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
-        Edit this reusable component inside lx-components/${slug}/component.tsx.
+        Edit this reusable block inside lx-components/${slug}/component.tsx.
       </p>
     </section>
   );
@@ -104,8 +112,10 @@ export class LyrixComponentService {
 
   async createComponent(input: CreateComponentInput): Promise<LyrixComponent> {
     const { name, slug } = validateComponentInput(input);
+    const category: LyrixBlockCategory = input.category ?? "other";
     const componentDirectory = path.join(this.componentsDirectory, slug);
     const componentFilePath = path.join(componentDirectory, "component.tsx");
+    const blockDocPath = path.join(componentDirectory, "lyrix-block.json");
 
     await this.assertPathInsideComponents(componentDirectory);
 
@@ -120,6 +130,13 @@ export class LyrixComponentService {
         encoding: "utf8",
         flag: "wx",
       });
+
+      const blockDoc = createDefaultBlockDocument({ name, slug, category });
+      await writeFile(
+        blockDocPath,
+        `${JSON.stringify(blockDoc, null, 2)}\n`,
+        { encoding: "utf8", flag: "wx" }
+      );
     } catch (error) {
       if (await this.pathExists(componentFilePath)) {
         throw new Error("A component with that slug already exists.");
@@ -128,11 +145,7 @@ export class LyrixComponentService {
       throw error;
     }
 
-    return {
-      name,
-      slug,
-      filePath: componentFilePath,
-    };
+    return { name, slug, category, filePath: componentFilePath };
   }
 
   async deleteComponent(slugInput: string) {
@@ -166,9 +179,7 @@ export class LyrixComponentService {
       return [];
     }
 
-    const entries = await readdir(this.componentsDirectory, {
-      withFileTypes: true,
-    });
+    const entries = await readdir(this.componentsDirectory, { withFileTypes: true });
     const components: LyrixComponent[] = [];
 
     for (const entry of entries) {
@@ -186,19 +197,95 @@ export class LyrixComponentService {
         continue;
       }
 
+      const blockDoc = await this.readBlockDocMeta(entry.name);
+
       components.push({
-        name: await this.readComponentTitle(
-          componentFilePath,
-          titleFromSlug(entry.name)
-        ),
+        name: blockDoc?.name ?? titleFromSlug(entry.name),
         slug: entry.name,
+        category: blockDoc?.category ?? "other",
         filePath: componentFilePath,
       });
     }
 
-    return components.sort((componentA, componentB) =>
-      componentA.name.localeCompare(componentB.name)
-    );
+    return components.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async getBlockDocument(slug: string): Promise<LyrixBlockDocument> {
+    const cleanSlug = slugify(slug);
+    const blockDocPath = this.resolveBlockDocPath(cleanSlug);
+
+    await this.assertPathInsideComponents(blockDocPath);
+
+    if (await this.pathExists(blockDocPath)) {
+      const source = await readFile(blockDocPath, "utf8");
+      const parsed = JSON.parse(source) as unknown;
+
+      if (isLyrixBlockDocument(parsed)) {
+        return parsed;
+      }
+    }
+
+    return createDefaultBlockDocument({
+      name: titleFromSlug(cleanSlug),
+      slug: cleanSlug,
+      category: "other",
+    });
+  }
+
+  async saveBlockDocument(slug: string, document: LyrixBlockDocument): Promise<LyrixBlockDocument> {
+    const cleanSlug = slugify(slug);
+    const blockDocPath = this.resolveBlockDocPath(cleanSlug);
+
+    await this.assertPathInsideComponents(blockDocPath);
+
+    if (!isLyrixBlockDocument(document)) {
+      throw new Error("Invalid Lyrix block document.");
+    }
+
+    const next: LyrixBlockDocument = {
+      ...document,
+      slug: cleanSlug,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await writeFile(blockDocPath, `${JSON.stringify(next, null, 2)}\n`, {
+      encoding: "utf8",
+    });
+
+    return next;
+  }
+
+  private resolveBlockDocPath(slug: string) {
+    return path.join(this.componentsDirectory, slug, "lyrix-block.json");
+  }
+
+  private async readBlockDocMeta(
+    slug: string
+  ): Promise<Pick<LyrixBlockDocument, "name" | "category"> | null> {
+    const blockDocPath = this.resolveBlockDocPath(slug);
+
+    try {
+      const source = await readFile(blockDocPath, "utf8");
+      const parsed = JSON.parse(source) as unknown;
+
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        "name" in parsed &&
+        "category" in parsed &&
+        typeof (parsed as { name: unknown }).name === "string" &&
+        typeof (parsed as { category: unknown }).category === "string"
+      ) {
+        return {
+          name: (parsed as { name: string }).name,
+          category: (parsed as { category: LyrixBlockCategory }).category,
+        };
+      }
+    } catch {
+      // Fall back to slug-derived title
+    }
+
+    return null;
   }
 
   private async pathExists(targetPath: string) {
@@ -216,14 +303,5 @@ export class LyrixComponentService {
     if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
       throw new Error("Invalid component path.");
     }
-  }
-
-  private async readComponentTitle(componentFilePath: string, fallback: string) {
-    const source = await readFile(componentFilePath, "utf8").catch(() => "");
-    const match = source.match(
-      /const\s+componentTitle\s*=\s*["'`]([^"'`]+)["'`]/
-    );
-
-    return match?.[1] || fallback;
   }
 }

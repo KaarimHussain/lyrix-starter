@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import LyrixInput from "@/components/LyrixInput";
 import { Button } from "@/components/ui/button";
+import { BLOCK_CATEGORIES, LyrixBlockCategory } from "@/lib/lyrix-document";
 
 type AdminTab = "ai" | "pages" | "blocks" | "site";
 
@@ -45,6 +46,7 @@ type ReusableComponent = {
   name: string;
   slug: string;
   filePath: string;
+  category?: LyrixBlockCategory;
 };
 
 type ComponentApiItem = ReusableComponent;
@@ -658,6 +660,7 @@ function BlocksPanel() {
     const formData = new FormData(event.currentTarget);
     const name = String(formData.get("name") ?? "").trim();
     const slug = String(formData.get("slug") ?? "").trim();
+    const category = String(formData.get("category") ?? "other").trim() || "other";
 
     if (!name) {
       setCreateComponentError("Enter a component name.");
@@ -671,7 +674,7 @@ function BlocksPanel() {
       const response = await fetch("/api/lx-admin/components", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug: slug || undefined }),
+        body: JSON.stringify({ name, slug: slug || undefined, category }),
       });
       const payload = await response.json().catch(() => ({}));
 
@@ -821,7 +824,7 @@ function BlocksPanel() {
 
         {/* Component detail */}
         <div className="rounded-xl border border-border/60 bg-card">
-          <div className="flex flex-wrap items-center gap-3 border-b border-border/60 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">
                 {selectedComponent.name}
@@ -832,6 +835,15 @@ function BlocksPanel() {
                   : "lx-components"}
               </p>
             </div>
+            {selectedComponent.slug && (
+              <Link
+                href={`/lx-admin/block-editor?slug=${encodeURIComponent(selectedComponent.slug)}`}
+                className="flex shrink-0 items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/8 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/15"
+              >
+                <WandSparkles className="size-3.5" />
+                Edit with Block Editor
+              </Link>
+            )}
           </div>
 
           <div className="p-4">
@@ -965,12 +977,16 @@ function ComponentRow({
   onDelete: () => void;
   onSelect: () => void;
 }) {
+  const categoryColor =
+    BLOCK_CATEGORIES.find((c) => c.slug === component.category)?.color ?? "#6b7280";
+
   return (
     <div
-      className={`group grid grid-cols-[1fr_auto] items-center gap-1 rounded-lg border transition-colors ${active
-        ? "border-primary/20 bg-primary/8"
-        : "border-border/60 bg-background/40 hover:bg-muted/40"
-        }`}
+      className={`group grid grid-cols-[1fr_auto] items-center gap-1 rounded-lg border transition-colors ${
+        active
+          ? "border-primary/20 bg-primary/8"
+          : "border-border/60 bg-background/40 hover:bg-muted/40"
+      }`}
     >
       <button
         type="button"
@@ -978,7 +994,11 @@ function ComponentRow({
         className="min-w-0 px-3 py-2 text-left"
       >
         <span className="flex items-center gap-2 text-sm font-medium">
-          <Boxes className="size-3.5 shrink-0 text-muted-foreground" />
+          <span
+            className="size-2 shrink-0 rounded-full"
+            style={{ backgroundColor: categoryColor }}
+            aria-hidden
+          />
           <span className="truncate">{component.name}</span>
         </span>
         <span className="mt-0.5 block truncate font-mono text-[11px] text-muted-foreground/70">
@@ -1013,6 +1033,11 @@ function ComponentCreateModal({
   onClose: () => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 }) {
+  const [selectedCategory, setSelectedCategory] = useState<LyrixBlockCategory>("other");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const activeCategory = BLOCK_CATEGORIES.find((c) => c.slug === selectedCategory)!;
+
   return (
     <div
       className="fixed inset-0 z-50 grid place-items-center bg-background/60 px-4 backdrop-blur-sm"
@@ -1020,15 +1045,15 @@ function ComponentCreateModal({
       onMouseDown={onClose}
     >
       <form
-        className="w-full max-w-sm rounded-xl border border-border/60 bg-card p-5 shadow-2xl"
+        className="w-full max-w-md rounded-xl border border-border/60 bg-card p-5 shadow-2xl"
         onMouseDown={(e) => e.stopPropagation()}
         onSubmit={onSubmit}
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-sm font-semibold">Create Component</h2>
+            <h2 className="text-sm font-semibold">Create Block</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Add a reusable block to lx-components.
+              Add a reusable visual block to lx-components.
             </p>
           </div>
           <Button
@@ -1044,22 +1069,77 @@ function ComponentCreateModal({
           </Button>
         </div>
 
-        <div className="mt-4 grid gap-3">
+        <div className="mt-5 grid gap-4">
           <LyrixInput
             autoFocus
             inputSize="sm"
-            label="Component name"
+            label="Block name"
             name="name"
             placeholder="Pricing Cards"
           />
           <LyrixInput
-            error={createComponentError}
             hint="Optional. Generated from name if empty."
             inputSize="sm"
             label="Slug"
             name="slug"
             placeholder="pricing-cards"
           />
+
+          {/* Category selector */}
+          <div className="grid gap-1.5">
+            <span className="text-xs font-medium">Category</span>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen((open) => !open)}
+                className="flex h-9 w-full items-center gap-2.5 rounded-lg border border-border bg-background px-3 text-sm transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+              >
+                <span
+                  className="size-3 shrink-0 rounded-full"
+                  style={{ backgroundColor: activeCategory.color }}
+                />
+                <span className="flex-1 text-left">{activeCategory.label}</span>
+                <ChevronRight
+                  className={`size-4 shrink-0 text-muted-foreground transition-transform ${isDropdownOpen ? "rotate-90" : ""}`}
+                />
+              </button>
+
+              {isDropdownOpen && (
+                <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-10 rounded-lg border border-border bg-card p-1 shadow-lg">
+                  <div className="grid grid-cols-3 gap-1">
+                    {BLOCK_CATEGORIES.map((cat) => (
+                      <button
+                        key={cat.slug}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategory(cat.slug);
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`flex items-center gap-2 rounded-md px-2.5 py-2 text-xs transition-colors ${
+                          selectedCategory === cat.slug
+                            ? "bg-primary/10 font-medium text-primary"
+                            : "text-foreground hover:bg-muted"
+                        }`}
+                      >
+                        <span
+                          className="size-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: cat.color }}
+                        />
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <input type="hidden" name="category" value={selectedCategory} />
+          </div>
+
+          {createComponentError && (
+            <p className="rounded-lg border border-destructive/25 bg-destructive/8 px-3 py-2 text-xs text-destructive">
+              {createComponentError}
+            </p>
+          )}
         </div>
 
         <div className="mt-5 flex justify-end gap-2">
@@ -1079,7 +1159,7 @@ function ComponentCreateModal({
                 Creating…
               </>
             ) : (
-              "Create"
+              "Create Block"
             )}
           </Button>
         </div>

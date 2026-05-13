@@ -1,4 +1,5 @@
 export type LyrixElementType =
+  | "block-ref"
   | "container"
   | "heading"
   | "hero"
@@ -152,6 +153,7 @@ export type LyrixElement = {
     videoUrl?: string;
     height?: string;
     items?: string[];
+    blockSlug?: string;
     layout?: LyrixContainerLayout;
     style?: LyrixElementStyle;
     advanced?: LyrixElementAdvanced;
@@ -166,6 +168,62 @@ export type LyrixPageDocument = {
   elements: LyrixElement[];
   updatedAt: string;
 };
+
+export const BLOCK_CATEGORIES = [
+  { slug: "hero",        label: "Hero",        color: "#f59e0b" },
+  { slug: "marketing",   label: "Marketing",   color: "#3b82f6" },
+  { slug: "content",     label: "Content",     color: "#10b981" },
+  { slug: "navigation",  label: "Navigation",  color: "#8b5cf6" },
+  { slug: "footer",      label: "Footer",      color: "#f97316" },
+  { slug: "pricing",     label: "Pricing",     color: "#ec4899" },
+  { slug: "testimonial", label: "Testimonial", color: "#6366f1" },
+  { slug: "cta",         label: "CTA",         color: "#ef4444" },
+  { slug: "other",       label: "Other",       color: "#6b7280" },
+] as const;
+
+export type LyrixBlockCategory = (typeof BLOCK_CATEGORIES)[number]["slug"];
+
+export type LyrixBlockDocument = {
+  version: 1;
+  name: string;
+  slug: string;
+  category: LyrixBlockCategory;
+  elements: LyrixElement[];
+  updatedAt: string;
+};
+
+export function createDefaultBlockDocument({
+  name,
+  slug,
+  category,
+}: {
+  name: string;
+  slug: string;
+  category: LyrixBlockCategory;
+}): LyrixBlockDocument {
+  return {
+    version: 1,
+    name,
+    slug,
+    category,
+    elements: [],
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export function isLyrixBlockDocument(value: unknown): value is LyrixBlockDocument {
+  if (!value || typeof value !== "object") return false;
+  const doc = value as Partial<LyrixBlockDocument>;
+  return (
+    doc.version === 1 &&
+    typeof doc.name === "string" &&
+    typeof doc.slug === "string" &&
+    typeof doc.category === "string" &&
+    typeof doc.updatedAt === "string" &&
+    Array.isArray(doc.elements) &&
+    doc.elements.every(isLyrixElement)
+  );
+}
 
 type SectionTemplate = {
   type: LyrixElementType;
@@ -387,7 +445,7 @@ export function isLyrixPageDocument(
   );
 }
 
-function isLyrixElement(value: unknown): value is LyrixElement {
+export function isLyrixElement(value: unknown): value is LyrixElement {
   if (!value || typeof value !== "object") {
     return false;
   }
@@ -408,6 +466,7 @@ function isLyrixElement(value: unknown): value is LyrixElement {
 
 function isLyrixElementType(value: unknown): value is LyrixElementType {
   return (
+    value === "block-ref" ||
     value === "hero" ||
     value === "container" ||
     value === "heading" ||
